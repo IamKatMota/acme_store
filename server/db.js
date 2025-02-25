@@ -3,7 +3,7 @@ const uuid = require('uuid');
 const bcrypt = require('bcrypt');
 
 
-//set onnection to pg db
+//set connection to pg db
 const client = new pg.Client("postgres://kat:Kat1234@localhost:5432/acme_store_db");
 
 const createTables = async () => {
@@ -73,15 +73,6 @@ const fetchUsers = async () => {
     return result.rows;
 }
 
-//A method that returns an array of favorites for a user
-const fetchFavorites = async (user_id) => {
-    const SQL = `
-        SELECT * FROM favorites
-        WHERE user_id = $1
-    `;
-    const result = await client.query(SQL, [user_id]);
-    return result.rows;
-}
 
 //A method that returns an array of products in the database.
 const fetchProducts = async () => {
@@ -92,18 +83,42 @@ const fetchProducts = async () => {
     return result.rows;
 }
 
+//A method that returns an array of favorites for a user
+const fetchFavorites = async (user_id) => {
+    const SQL = `
+        SELECT * FROM favorites
+        WHERE user_id = $1
+    `;
+    const result = await client.query(SQL, [user_id]);
+    return result.rows;
+}
+
 // A method that deletes a favorite in the database.
-const destroyFavorite = async () => {
-    
+const destroyFavorite = async (favorite_id, user_id) => {
+    const SQL = `
+        DELETE FROM favorites
+        WHERE id = $1 AND user_id = $2
+        RETURNING *
+    `
+    const result = await client.query(SQL, [favorite_id, user_id]);
+    return result.rows[0];
 }
 
 const init = async () => {
     await client.connect();
     await createTables();
     const user1 = await createUser("smilingkat", "password");
+    console.table(user1)
     const user2 = await createUser("frowningFrank", "password");
+    console.table(user2);
     const product1 = await createProduct("Summer Friday's Lip Balm");
+    console.table(product1);
+    const user3 = await createUser("jumpingMia", "password");
+    console.table(user3);
+    const product3 = await createProduct("Escapade Gourmand perfume oil");
+    console.table(product3);
     const product2 = await createProduct("Lanolips Donut Glaze Lip Ointment");
+    console.table(product2);
     await createFavorite(product1.id, user2.id);
     await createFavorite(product2.id, user1.id);
 
